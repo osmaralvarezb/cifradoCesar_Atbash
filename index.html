@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cifrado César y Atbash (ASCII + alfabeto configurable)</title>
+    <style>
+      :root {
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+      }
+      body {
+        margin: 0;
+        background: #0b1020;
+        color: #eaf0ff;
+      }
+      header {
+        padding: 20px;
+        background: #0f1630;
+        border-bottom: 1px solid #24305a;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 18px;
+      }
+      header p {
+        margin: 6px 0 0;
+        opacity: 0.85;
+        font-size: 13px;
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 18px;
+        display: grid;
+        gap: 14px;
+      }
+      .card {
+        background: #101a3a;
+        border: 1px solid #24305a;
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .row {
+        display: grid;
+        gap: 10px;
+      }
+      @media (min-width: 900px) {
+        .row.cols2 {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      label {
+        font-size: 12px;
+        opacity: 0.85;
+        display: block;
+        margin-bottom: 6px;
+      }
+      textarea,
+      input,
+      select,
+      button {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 12px;
+        border: 1px solid #2b3a6e;
+        background: #0b1330;
+        color: #eaf0ff;
+        padding: 10px 12px;
+        font-size: 14px;
+        outline: none;
+      }
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+      button {
+        cursor: pointer;
+        background: #1b2a5e;
+        border-color: #3750a3;
+      }
+      button:hover {
+        filter: brightness(1.1);
+      }
+      .pill {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 10px;
+        border: 1px solid #2b3a6e;
+        border-radius: 999px;
+        font-size: 12px;
+        opacity: 0.9;
+      }
+      .muted {
+        opacity: 0.8;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .grid3 {
+        display: grid;
+        gap: 10px;
+      }
+      @media (min-width: 900px) {
+        .grid3 {
+          grid-template-columns: 1.2fr 0.8fr 1fr;
+        }
+      }
+      details {
+        border: 1px dashed #2b3a6e;
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      summary {
+        cursor: pointer;
+      }
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      pre {
+        background: #070d22;
+        border: 1px solid #24305a;
+        border-radius: 12px;
+        padding: 12px;
+        overflow: auto;
+      }
+      .ok {
+        color: #b8ffcc;
+      }
+      .warn {
+        color: #ffd28a;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>
+        🔐 Cifrado / Descifrado: César y Atbash (ASCII + alfabeto configurable)
+      </h1>
+      <p>
+        Incluye detección del módulo (César/Atbash) y estimación del
+        desplazamiento en César.
+      </p>
+    </header>
+
+    <main>
+      <section class="card grid3">
+        <div>
+          <label for="mode">Módulo</label>
+          <select id="mode">
+            <option value="cesar">César</option>
+            <option value="atbash">Atbash</option>
+          </select>
+          <div style="height: 10px"></div>
+
+          <label for="action">Acción</label>
+          <select id="action">
+            <option value="encrypt">Cifrar</option>
+            <option value="decrypt">Descifrar</option>
+          </select>
+
+          <div style="height: 10px"></div>
+          <label for="shift">Desplazamiento (solo César)</label>
+          <input id="shift" type="number" value="3" min="-9999" max="9999" />
+          <p class="muted">
+            En César se rota dentro del conjunto de caracteres definido
+            (alfabeto). Si un carácter no está en el alfabeto, se deja igual.
+          </p>
+        </div>
+
+        <div>
+          <label for="alphabet">Conjunto de caracteres (alfabeto)</label>
+          <textarea id="alphabet" spellcheck="false">
+ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-_@#$/\&amp;+=*&quot;'áéíóúÁÉÍÓÚñÑ</textarea
+          >
+          <p class="muted">
+            Debe ser una cadena con caracteres únicos (sin repetidos). Se usa
+            como base (ASCII) para mapear por posición.
+          </p>
+          <button id="sanitizeBtn">Eliminar repetidos</button>
+        </div>
+
+        <div>
+          <div class="pill">
+            <strong>Detección:</strong> <span id="detectBadge">—</span>
+          </div>
+          <div style="height: 10px"></div>
+          <div class="pill">
+            <strong>Shift estimado:</strong> <span id="shiftGuess">—</span>
+          </div>
+          <div style="height: 10px"></div>
+          <div class="pill">
+            <strong>Estado:</strong> <span id="status">Listo</span>
+          </div>
+          <div style="height: 12px"></div>
+
+          <button id="runBtn">Ejecutar</button>
+          <div style="height: 10px"></div>
+          <button id="swapBtn">Intercambiar entrada ⇄ salida</button>
+          <div style="height: 10px"></div>
+          <button id="copyBtn">Copiar salida</button>
+
+          <p class="muted">
+            Nota: Atbash es autoinverso (cifrar = descifrar). En César,
+            descifrar equivale a usar el shift negativo.
+          </p>
+        </div>
+      </section>
+
+      <section class="card row cols2">
+        <div>
+          <label for="inputText">Entrada</label>
+          <textarea
+            id="inputText"
+            placeholder="Escribe aquí el texto..."
+          ></textarea>
+        </div>
+        <div>
+          <label for="outputText">Salida</label>
+          <textarea id="outputText" readonly></textarea>
+        </div>
+      </section>
+
+      <section class="card">
+        <details>
+          <summary>
+            <strong>📘 Documentación segura (para tu entrega)</strong>
+          </summary>
+          <p class="muted">
+            La idea es que la documentación sea revisable sin “impresiones” y
+            sin exponer innecesariamente secretos. Recomendación: publica el
+            sitio con este sistema y el código en un repositorio (GitHub) con
+            README bien explicado, o en un Google Doc con acceso controlado.
+          </p>
+          <ul class="muted">
+            <li>
+              <strong>Sin claves hardcodeadas:</strong> aquí no hay llaves
+              secretas; el shift lo elige el usuario.
+            </li>
+            <li>
+              <strong>Validación:</strong> se valida que el alfabeto tenga
+              caracteres únicos.
+            </li>
+            <li>
+              <strong>Principio de mínimo privilegio:</strong> el sitio no pide
+              permisos especiales.
+            </li>
+            <li>
+              <strong>Explicación técnica:</strong> abajo está el pseudocódigo y
+              el detalle de ASCII/posiciones.
+            </li>
+          </ul>
+          <pre id="docBlock"></pre>
+        </details>
+      </section>
+    </main>
+
+    <script>
+      // ===== Utilidades =====
+      const $ = (id) => document.getElementById(id);
+
+      function uniqueChars(str) {
+        const seen = new Set();
+        let out = "";
+        for (const ch of str) {
+          if (!seen.has(ch)) {
+            seen.add(ch);
+            out += ch;
+          }
+        }
+        return out;
+      }
+
+      function validateAlphabet(alphabet) {
+        if (!alphabet || alphabet.length < 2)
+          return {
+            ok: false,
+            msg: "El alfabeto debe tener al menos 2 caracteres.",
+          };
+        const u = uniqueChars(alphabet);
+        if (u.length !== alphabet.length)
+          return {
+            ok: false,
+            msg: "El alfabeto tiene caracteres repetidos (usa 'Eliminar repetidos').",
+          };
+        return { ok: true, msg: "OK" };
+      }
+
+      // ===== Cifrado César (sobre posiciones del alfabeto) =====
+      function cesarTransform(text, alphabet, shift) {
+        const n = alphabet.length;
+        // normalizamos shift a rango [0, n-1]
+        let k = shift % n;
+        if (k < 0) k += n;
+
+        let out = "";
+        for (const ch of text) {
+          const idx = alphabet.indexOf(ch);
+          if (idx === -1) {
+            out += ch;
+          } else {
+            out += alphabet[(idx + k) % n];
+          }
+        }
+        return out;
+      }
+
+      // ===== Atbash (reflejo dentro del alfabeto) =====
+      function atbashTransform(text, alphabet) {
+        const n = alphabet.length;
+        let out = "";
+        for (const ch of text) {
+          const idx = alphabet.indexOf(ch);
+          if (idx === -1) out += ch;
+          else out += alphabet[n - 1 - idx];
+        }
+        return out;
+      }
+
+      // ===== Detección del módulo (heurística) =====
+      // 1) Si aplicar Atbash al texto produce algo "más plausible" (más caracteres en alfabeto original de letras/espacios),
+      //    se sugiere Atbash.
+      // 2) Para César, se prueba cada shift y se toma el que maximiza la "plausibilidad" (espacios + letras comunes).
+      function plausibilityScore(s) {
+        // Score simple: cuenta letras, espacios y signos básicos; penaliza caracteres raros.
+        let score = 0;
+        for (const ch of s) {
+          if (/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(ch)) score += 2;
+          else if (ch === " ") score += 2;
+          else if (/[0-9.,;:¡!¿?\-()]/.test(ch)) score += 1;
+          else score -= 1;
+        }
+        return score;
+      }
+
+      function guessCesarShift(cipherText, alphabet) {
+        const n = alphabet.length;
+        let bestShift = 0;
+        let bestScore = -Infinity;
+        let bestPlain = cipherText;
+
+        for (let s = 0; s < n; s++) {
+          // "descifrar" = shift negativo (equivale a n - s en cifrado)
+          const candidate = cesarTransform(cipherText, alphabet, -s);
+          const sc = plausibilityScore(candidate);
+          if (sc > bestScore) {
+            bestScore = sc;
+            bestShift = s;
+            bestPlain = candidate;
+          }
+        }
+        return { bestShift, bestScore, bestPlain };
+      }
+
+      function detectModule(text, alphabet) {
+        const atbashCandidate = atbashTransform(text, alphabet);
+        const atbashScore = plausibilityScore(atbashCandidate);
+
+        const cesarGuess = guessCesarShift(text, alphabet);
+        const cesarScore = cesarGuess.bestScore;
+
+        // Decide por mayor score, pero con margen:
+        if (atbashScore > cesarScore + 3)
+          return { module: "Atbash", shift: "—", sample: atbashCandidate };
+        return {
+          module: "César (probable)",
+          shift: String(cesarGuess.bestShift),
+          sample: cesarGuess.bestPlain,
+        };
+      }
+
+      // ===== UI =====
+      function setStatus(msg, type = "ok") {
+        $("status").textContent = msg;
+        $("status").className = type === "warn" ? "warn" : "ok";
+      }
+
+      function buildDocText() {
+        return [
+          `DOCUMENTACIÓN TÉCNICA (RESUMEN)
+
+1) Enfoque con ASCII y alfabeto configurable
+- El sistema trabaja con caracteres (que en computación se representan como códigos, por ejemplo ASCII/Unicode).
+- En vez de asumir solo A-Z, el usuario define un conjunto de caracteres (alfabeto).
+- Cada carácter del alfabeto tiene una posición i (0..n-1). El cifrado opera sobre estas posiciones.
+
+2) Cifrado César (rotación)
+Dado:
+- alfabeto = cadena de n caracteres únicos
+- shift = desplazamiento entero k
+Para cada carácter c del texto:
+- si c NO está en alfabeto => se deja igual
+- si c está en alfabeto en posición i => se reemplaza por alfabeto[(i + k) mod n]
+
+3) Cifrado Atbash (reflejo)
+Para cada carácter c:
+- si c NO está en alfabeto => se deja igual
+- si c está en alfabeto en posición i => se reemplaza por alfabeto[(n-1) - i]
+Atbash es autoinverso: aplicar Atbash dos veces devuelve el original.
+
+4) Detección del módulo (heurística)
+- Se intenta "explicar" el texto con Atbash y con César.
+- Para César se prueban shifts posibles (0..n-1) y se escoge el que produce texto más plausible
+  (más letras/espacios y menos caracteres raros).
+- Se reporta el módulo más probable y el shift estimado.
+
+5) Seguridad (documentación segura)
+- No hay llaves secretas incrustadas en el código.
+- Se valida el alfabeto (sin repetidos).
+- Se recomienda publicar el código con control de acceso o al menos sin exponer datos personales.
+`,
+        ].join("\n");
+      }
+
+      function run() {
+        const mode = $("mode").value;
+        const action = $("action").value;
+        let alphabet = $("alphabet").value;
+        const v = validateAlphabet(alphabet);
+        if (!v.ok) {
+          setStatus(v.msg, "warn");
+          return;
+        }
+
+        const input = $("inputText").value;
+        let out = "";
+
+        if (mode === "cesar") {
+          const shift = parseInt($("shift").value || "0", 10) || 0;
+          const k = action === "encrypt" ? shift : -shift;
+          out = cesarTransform(input, alphabet, k);
+        } else {
+          out = atbashTransform(input, alphabet);
+        }
+
+        $("outputText").value = out;
+
+        // detección sobre el texto de salida o entrada según convenga:
+        const detectOn = action === "encrypt" ? out : input;
+        const det = detectModule(detectOn, alphabet);
+        $("detectBadge").textContent = det.module;
+        $("shiftGuess").textContent = det.shift;
+
+        setStatus("Ejecutado correctamente", "ok");
+      }
+
+      $("runBtn").addEventListener("click", run);
+
+      $("sanitizeBtn").addEventListener("click", () => {
+        const cleaned = uniqueChars($("alphabet").value);
+        $("alphabet").value = cleaned;
+        const v = validateAlphabet(cleaned);
+        setStatus(
+          v.ok ? "Alfabeto limpio (sin repetidos)" : v.msg,
+          v.ok ? "ok" : "warn",
+        );
+      });
+
+      $("swapBtn").addEventListener("click", () => {
+        const a = $("inputText").value;
+        $("inputText").value = $("outputText").value;
+        $("outputText").value = a;
+        setStatus("Intercambiado", "ok");
+      });
+
+      $("copyBtn").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText($("outputText").value);
+          setStatus("Salida copiada al portapapeles", "ok");
+        } catch {
+          setStatus("No se pudo copiar (permiso del navegador)", "warn");
+        }
+      });
+
+      // init docs
+      $("docBlock").textContent = buildDocText();
+    </script>
+  </body>
+</html>
