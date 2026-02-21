@@ -226,43 +226,9 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
           <textarea id="outputText" readonly></textarea>
         </div>
       </section>
-
-      <section class="card">
-        <details>
-          <summary>
-            <strong>📘 Documentación segura (para tu entrega)</strong>
-          </summary>
-          <p class="muted">
-            La idea es que la documentación sea revisable sin “impresiones” y
-            sin exponer innecesariamente secretos. Recomendación: publica el
-            sitio con este sistema y el código en un repositorio (GitHub) con
-            README bien explicado, o en un Google Doc con acceso controlado.
-          </p>
-          <ul class="muted">
-            <li>
-              <strong>Sin claves hardcodeadas:</strong> aquí no hay llaves
-              secretas; el shift lo elige el usuario.
-            </li>
-            <li>
-              <strong>Validación:</strong> se valida que el alfabeto tenga
-              caracteres únicos.
-            </li>
-            <li>
-              <strong>Principio de mínimo privilegio:</strong> el sitio no pide
-              permisos especiales.
-            </li>
-            <li>
-              <strong>Explicación técnica:</strong> abajo está el pseudocódigo y
-              el detalle de ASCII/posiciones.
-            </li>
-          </ul>
-          <pre id="docBlock"></pre>
-        </details>
-      </section>
     </main>
 
     <script>
-      // ===== Utilidades =====
       const $ = (id) => document.getElementById(id);
 
       function uniqueChars(str) {
@@ -292,10 +258,8 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         return { ok: true, msg: "OK" };
       }
 
-      // ===== Cifrado César (sobre posiciones del alfabeto) =====
       function cesarTransform(text, alphabet, shift) {
         const n = alphabet.length;
-        // normalizamos shift a rango [0, n-1]
         let k = shift % n;
         if (k < 0) k += n;
 
@@ -311,7 +275,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         return out;
       }
 
-      // ===== Atbash (reflejo dentro del alfabeto) =====
       function atbashTransform(text, alphabet) {
         const n = alphabet.length;
         let out = "";
@@ -323,12 +286,7 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         return out;
       }
 
-      // ===== Detección del módulo (heurística) =====
-      // 1) Si aplicar Atbash al texto produce algo "más plausible" (más caracteres en alfabeto original de letras/espacios),
-      //    se sugiere Atbash.
-      // 2) Para César, se prueba cada shift y se toma el que maximiza la "plausibilidad" (espacios + letras comunes).
       function plausibilityScore(s) {
-        // Score simple: cuenta letras, espacios y signos básicos; penaliza caracteres raros.
         let score = 0;
         for (const ch of s) {
           if (/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(ch)) score += 2;
@@ -346,7 +304,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         let bestPlain = cipherText;
 
         for (let s = 0; s < n; s++) {
-          // "descifrar" = shift negativo (equivale a n - s en cifrado)
           const candidate = cesarTransform(cipherText, alphabet, -s);
           const sc = plausibilityScore(candidate);
           if (sc > bestScore) {
@@ -365,7 +322,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         const cesarGuess = guessCesarShift(text, alphabet);
         const cesarScore = cesarGuess.bestScore;
 
-        // Decide por mayor score, pero con margen:
         if (atbashScore > cesarScore + 3)
           return { module: "Atbash", shift: "—", sample: atbashCandidate };
         return {
@@ -375,47 +331,9 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         };
       }
 
-      // ===== UI =====
       function setStatus(msg, type = "ok") {
         $("status").textContent = msg;
         $("status").className = type === "warn" ? "warn" : "ok";
-      }
-
-      function buildDocText() {
-        return [
-          `DOCUMENTACIÓN TÉCNICA (RESUMEN)
-
-1) Enfoque con ASCII y alfabeto configurable
-- El sistema trabaja con caracteres (que en computación se representan como códigos, por ejemplo ASCII/Unicode).
-- En vez de asumir solo A-Z, el usuario define un conjunto de caracteres (alfabeto).
-- Cada carácter del alfabeto tiene una posición i (0..n-1). El cifrado opera sobre estas posiciones.
-
-2) Cifrado César (rotación)
-Dado:
-- alfabeto = cadena de n caracteres únicos
-- shift = desplazamiento entero k
-Para cada carácter c del texto:
-- si c NO está en alfabeto => se deja igual
-- si c está en alfabeto en posición i => se reemplaza por alfabeto[(i + k) mod n]
-
-3) Cifrado Atbash (reflejo)
-Para cada carácter c:
-- si c NO está en alfabeto => se deja igual
-- si c está en alfabeto en posición i => se reemplaza por alfabeto[(n-1) - i]
-Atbash es autoinverso: aplicar Atbash dos veces devuelve el original.
-
-4) Detección del módulo (heurística)
-- Se intenta "explicar" el texto con Atbash y con César.
-- Para César se prueban shifts posibles (0..n-1) y se escoge el que produce texto más plausible
-  (más letras/espacios y menos caracteres raros).
-- Se reporta el módulo más probable y el shift estimado.
-
-5) Seguridad (documentación segura)
-- No hay llaves secretas incrustadas en el código.
-- Se valida el alfabeto (sin repetidos).
-- Se recomienda publicar el código con control de acceso o al menos sin exponer datos personales.
-`,
-        ].join("\n");
       }
 
       function run() {
@@ -441,7 +359,6 @@ Atbash es autoinverso: aplicar Atbash dos veces devuelve el original.
 
         $("outputText").value = out;
 
-        // detección sobre el texto de salida o entrada según convenga:
         const detectOn = action === "encrypt" ? out : input;
         const det = detectModule(detectOn, alphabet);
         $("detectBadge").textContent = det.module;
@@ -477,9 +394,6 @@ Atbash es autoinverso: aplicar Atbash dos veces devuelve el original.
           setStatus("No se pudo copiar (permiso del navegador)", "warn");
         }
       });
-
-      // init docs
-      $("docBlock").textContent = buildDocText();
     </script>
   </body>
 </html>
