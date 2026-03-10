@@ -163,6 +163,8 @@
           <select id="action">
             <option value="encrypt">Cifrar</option>
             <option value="decrypt">Descifrar</option>
+            <option value="bruteforce">Fuerza Bruta</option>
+          </select>
           </select>
 
           <div style="height: 10px"></div>
@@ -225,6 +227,14 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
           <label for="outputText">Salida</label>
           <textarea id="outputText" readonly></textarea>
         </div>
+      </section>
+      <section class="card">
+        <label for="bruteForceResults">Resultados de fuerza bruta</label>
+        <textarea
+          id="bruteForceResults"
+          readonly
+          placeholder="Aquí se mostrarán todas las posibilidades ordenadas por probabilidad."
+        ></textarea>
       </section>
     </main>
 
@@ -315,6 +325,35 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         return { bestShift, bestScore, bestPlain };
       }
 
+      function bruteForceCesar(cipherText, alphabet) {
+        const n = alphabet.length;
+        const results = [];
+
+        for (let s = 0; s < n; s++) {
+          const candidate = cesarTransform(cipherText, alphabet, -s);
+          const score = plausibilityScore(candidate);
+
+          results.push({
+            shift: s,
+            text: candidate,
+            score: score,
+          });
+        }
+
+        results.sort((a, b) => b.score - a.score);
+
+        return results;
+      }
+
+      function formatBruteForceResults(results) {
+        return results
+          .map(
+            (item, index) =>
+              `${index + 1}. Shift ${item.shift} | Puntaje: ${item.score}\n${item.text}`,
+          )
+          .join("\n\n");
+      }
+
       function detectModule(text, alphabet) {
         const atbashCandidate = atbashTransform(text, alphabet);
         const atbashScore = plausibilityScore(atbashCandidate);
@@ -341,6 +380,7 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         const action = $("action").value;
         let alphabet = $("alphabet").value;
         const v = validateAlphabet(alphabet);
+
         if (!v.ok) {
           setStatus(v.msg, "warn");
           return;
@@ -349,51 +389,62 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         const input = $("inputText").value;
         let out = "";
 
+        // Limpiar resultados previos de fuerza bruta
+        $("bruteForceResults").value = "";
+
         if (mode === "cesar") {
-          const shift = parseInt($("shift").value || "0", 10) || 0;
-          const k = action === "encrypt" ? shift : -shift;
-          out = cesarTransform(input, alphabet, k);
+          if (action === "encrypt") {
+            const shift = parseInt($("shift").value || "0", 10) || 0;
+            out = cesarTransform(input, alphabet, shift);
+            $("outputText").value = out;
+
+            const det = detectModule(out, alphabet);
+            $("detectBadge").textContent = det.module;
+            $("shiftGuess").textContent = det.shift;
+
+            setStatus("Cifrado César ejecutado correctamente", "ok");
+            return;
+          }
+
+          if (action === "decrypt") {
+            const shift = parseInt($("shift").value || "0", 10) || 0;
+            out = cesarTransform(input, alphabet, -shift);
+            $("outputText").value = out;
+
+            const det = detectModule(input, alphabet);
+            $("detectBadge").textContent = det.module;
+            $("shiftGuess").textContent = det.shift;
+
+            setStatus("Descifrado César ejecutado correctamente", "ok");
+            return;
+          }
+
+          if (action === "bruteforce") {
+            const results = bruteForceCesar(input, alphabet);
+            $("outputText").value = results.length ? results[0].text : "";
+            $("bruteForceResults").value = formatBruteForceResults(results);
+
+            $("detectBadge").textContent = "César (fuerza bruta)";
+            $("shiftGuess").textContent = results.length
+              ? String(results[0].shift)
+              : "—";
+
+            setStatus("Fuerza bruta de César ejecutada correctamente", "ok");
+            return;
+          }
         } else {
+          // Atbash
           out = atbashTransform(input, alphabet);
+          $("outputText").value = out;
+
+          const detectOn = action === "encrypt" ? out : input;
+          const det = detectModule(detectOn, alphabet);
+          $("detectBadge").textContent = det.module;
+          $("shiftGuess").textContent = det.shift;
+
+          setStatus("Atbash ejecutado correctamente", "ok");
         }
-
-        $("outputText").value = out;
-
-        const detectOn = action === "encrypt" ? out : input;
-        const det = detectModule(detectOn, alphabet);
-        $("detectBadge").textContent = det.module;
-        $("shiftGuess").textContent = det.shift;
-
-        setStatus("Ejecutado correctamente", "ok");
       }
-
-      $("runBtn").addEventListener("click", run);
-
-      $("sanitizeBtn").addEventListener("click", () => {
-        const cleaned = uniqueChars($("alphabet").value);
-        $("alphabet").value = cleaned;
-        const v = validateAlphabet(cleaned);
-        setStatus(
-          v.ok ? "Alfabeto limpio (sin repetidos)" : v.msg,
-          v.ok ? "ok" : "warn",
-        );
-      });
-
-      $("swapBtn").addEventListener("click", () => {
-        const a = $("inputText").value;
-        $("inputText").value = $("outputText").value;
-        $("outputText").value = a;
-        setStatus("Intercambiado", "ok");
-      });
-
-      $("copyBtn").addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText($("outputText").value);
-          setStatus("Salida copiada al portapapeles", "ok");
-        } catch {
-          setStatus("No se pudo copiar (permiso del navegador)", "warn");
-        }
-      });
     </script>
   </body>
 </html>
