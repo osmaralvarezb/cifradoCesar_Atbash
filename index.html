@@ -298,43 +298,97 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
 
       function plausibilityScore(s) {
         let score = 0;
+        const lower = ` ${s.toLowerCase()} `;
 
+        // 1. Puntaje base por tipo de caracteres
         for (const ch of s) {
-          if (/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(ch)) score += 2;
+          if (/[a-záéíóúñüA-ZÁÉÍÓÚÑÜ]/.test(ch)) score += 2;
           else if (ch === " ") score += 3;
           else if (/[0-9.,;:¡!¿?\-()]/.test(ch)) score += 1;
-          else score -= 1;
+          else score -= 2;
         }
 
-        const lower = s.toLowerCase();
-
+        // 2. Palabras muy comunes en español
         const commonWords = [
           " de ",
           " la ",
           " el ",
-          " que ",
           " en ",
           " y ",
+          " que ",
           " los ",
           " las ",
           " un ",
           " una ",
           " por ",
           " con ",
-          " hola",
-          " mundo",
+          " para ",
+          " es ",
+          " del ",
+          " se ",
+          " al ",
+          " lo ",
         ];
 
         for (const word of commonWords) {
-          if (lower.includes(word)) score += 8;
+          if (lower.includes(word)) score += 12;
         }
 
+        // 3. Fragmentos frecuentes del español
+        const commonPatterns = [
+          "que",
+          "ción",
+          "ente",
+          "ado",
+          "ada",
+          "ion",
+          "des",
+          "est",
+          "aci",
+          "pro",
+          "seg",
+          "tra",
+          "com",
+        ];
+
+        for (const pattern of commonPatterns) {
+          const matches = lower.split(pattern).length - 1;
+          score += matches * 6;
+        }
+
+        // 4. Recompensa por vocales en proporción razonable
+        const letters = (lower.match(/[a-záéíóúñü]/g) || []).length;
         const vowels = (lower.match(/[aeiouáéíóú]/g) || []).length;
-        const letters = (lower.match(/[a-záéíóúñ]/g) || []).length;
 
         if (letters > 0) {
           const ratio = vowels / letters;
-          if (ratio > 0.3 && ratio < 0.6) score += 5;
+
+          if (ratio >= 0.35 && ratio <= 0.55) {
+            score += 20;
+          } else if (ratio >= 0.25 && ratio <= 0.65) {
+            score += 8;
+          } else {
+            score -= 10;
+          }
+        }
+
+        // 5. Penalizar secuencias raras poco probables en español
+        const rarePatterns = [
+          "kk",
+          "ww",
+          "zx",
+          "qx",
+          "jjj",
+          "zzz",
+          "qz",
+          "wq",
+          "xj",
+          "vvv",
+        ];
+
+        for (const pattern of rarePatterns) {
+          const matches = lower.split(pattern).length - 1;
+          score -= matches * 8;
         }
 
         return score;
