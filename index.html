@@ -445,6 +445,34 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
           setStatus("Atbash ejecutado correctamente", "ok");
         }
       }
+
+      $("runBtn").addEventListener("click", run);
+
+      $("sanitizeBtn").addEventListener("click", () => {
+        const cleaned = uniqueChars($("alphabet").value);
+        $("alphabet").value = cleaned;
+        const v = validateAlphabet(cleaned);
+        setStatus(
+          v.ok ? "Alfabeto limpio (sin repetidos)" : v.msg,
+          v.ok ? "ok" : "warn",
+        );
+      });
+
+      $("swapBtn").addEventListener("click", () => {
+        const a = $("inputText").value;
+        $("inputText").value = $("outputText").value;
+        $("outputText").value = a;
+        setStatus("Intercambiado", "ok");
+      });
+
+      $("copyBtn").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText($("outputText").value);
+          setStatus("Salida copiada al portapapeles", "ok");
+        } catch {
+          setStatus("No se pudo copiar (permiso del navegador)", "warn");
+        }
+      });
     </script>
   </body>
 </html>
