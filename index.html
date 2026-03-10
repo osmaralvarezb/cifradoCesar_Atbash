@@ -298,12 +298,45 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
 
       function plausibilityScore(s) {
         let score = 0;
+
         for (const ch of s) {
           if (/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(ch)) score += 2;
-          else if (ch === " ") score += 2;
+          else if (ch === " ") score += 3;
           else if (/[0-9.,;:¡!¿?\-()]/.test(ch)) score += 1;
           else score -= 1;
         }
+
+        const lower = s.toLowerCase();
+
+        const commonWords = [
+          " de ",
+          " la ",
+          " el ",
+          " que ",
+          " en ",
+          " y ",
+          " los ",
+          " las ",
+          " un ",
+          " una ",
+          " por ",
+          " con ",
+          " hola",
+          " mundo",
+        ];
+
+        for (const word of commonWords) {
+          if (lower.includes(word)) score += 8;
+        }
+
+        const vowels = (lower.match(/[aeiouáéíóú]/g) || []).length;
+        const letters = (lower.match(/[a-záéíóúñ]/g) || []).length;
+
+        if (letters > 0) {
+          const ratio = vowels / letters;
+          if (ratio > 0.3 && ratio < 0.6) score += 5;
+        }
+
         return score;
       }
 
