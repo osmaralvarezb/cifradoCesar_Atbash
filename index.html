@@ -300,7 +300,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         let score = 0;
         const lower = ` ${s.toLowerCase()} `;
 
-        // 1. Puntaje base por tipo de caracteres
         for (const ch of s) {
           if (/[a-záéíóúñüA-ZÁÉÍÓÚÑÜ]/.test(ch)) score += 2;
           else if (ch === " ") score += 3;
@@ -308,7 +307,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
           else score -= 2;
         }
 
-        // 2. Palabras muy comunes en español
         const commonWords = [
           " de ",
           " la ",
@@ -334,7 +332,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
           if (lower.includes(word)) score += 12;
         }
 
-        // 3. Fragmentos frecuentes del español
         const commonPatterns = [
           "que",
           "ción",
@@ -356,7 +353,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
           score += matches * 6;
         }
 
-        // 4. Recompensa por vocales en proporción razonable
         const letters = (lower.match(/[a-záéíóúñü]/g) || []).length;
         const vowels = (lower.match(/[aeiouáéíóú]/g) || []).length;
 
@@ -372,7 +368,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
           }
         }
 
-        // 5. Penalizar secuencias raras poco probables en español
         const rarePatterns = [
           "kk",
           "ww",
@@ -476,7 +471,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
         const input = $("inputText").value;
         let out = "";
 
-        // Limpiar resultados previos de fuerza bruta
         $("bruteForceResults").value = "";
 
         if (mode === "cesar") {
@@ -520,7 +514,6 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:¡!¿?()[]{}-
             return;
           }
         } else {
-          // Atbash
           out = atbashTransform(input, alphabet);
           $("outputText").value = out;
 
