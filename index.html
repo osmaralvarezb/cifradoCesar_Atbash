@@ -209,10 +209,6 @@
         <button id="swapBtn">Intercambiar entrada ⇄ salida</button>
         <div style="height:10px"></div>
         <button id="copyBtn">Copiar salida</button>
-
-        <p class="muted">
-          Nota: Atbash es autoinverso (cifrar = descifrar). En César, descifrar equivale a usar el shift negativo.
-        </p>
       </div>
     </section>
 
@@ -225,25 +221,6 @@
         <label for="outputText">Salida</label>
         <textarea id="outputText" readonly></textarea>
       </div>
-    </section>
-
-    <section class="card">
-      <details>
-        <summary><strong>📘 Documentación segura (para tu entrega)</strong></summary>
-        <p class="muted">
-          La idea es que la documentación sea revisable sin “impresiones” y sin exponer innecesariamente secretos.
-          Recomendación: publica el sitio con este sistema y el código en un repositorio (GitHub) con README bien
-          explicado,
-          o en un Google Doc con acceso controlado.
-        </p>
-        <ul class="muted">
-          <li><strong>Sin claves hardcodeadas:</strong> aquí no hay llaves secretas; el shift lo elige el usuario.</li>
-          <li><strong>Validación:</strong> se valida que el alfabeto tenga caracteres únicos.</li>
-          <li><strong>Principio de mínimo privilegio:</strong> el sitio no pide permisos especiales.</li>
-          <li><strong>Explicación técnica:</strong> abajo está el pseudocódigo y el detalle de ASCII/posiciones.</li>
-        </ul>
-        <pre id="docBlock"></pre>
-      </details>
     </section>
   </main>
 
