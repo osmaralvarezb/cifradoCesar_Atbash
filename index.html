@@ -289,7 +289,6 @@
       let bestPlain = cipherText;
 
       for (let s = 0; s < n; s++) {
-        // "descifrar" = shift negativo (equivale a n - s en cifrado)
         const candidate = cesarTransform(cipherText, alphabet, -s);
         const sc = plausibilityScore(candidate);
         if (sc > bestScore) {
@@ -308,12 +307,10 @@
       const cesarGuess = guessCesarShift(text, alphabet);
       const cesarScore = cesarGuess.bestScore;
 
-      // Decide por mayor score, pero con margen:
       if (atbashScore > cesarScore + 3) return { module: "Atbash", shift: "—", sample: atbashCandidate };
       return { module: "César (probable)", shift: String(cesarGuess.bestShift), sample: cesarGuess.bestPlain };
     }
 
-    // ===== UI =====
     function setStatus(msg, type = "ok") {
       $("status").textContent = msg;
       $("status").className = type === "warn" ? "warn" : "ok";
@@ -339,7 +336,6 @@
 
       $("outputText").value = out;
 
-      // detección sobre el texto de salida o entrada según convenga:
       const detectOn = (action === "encrypt") ? out : input;
       const det = detectModule(detectOn, alphabet);
       $("detectBadge").textContent = det.module;
@@ -372,9 +368,6 @@
         setStatus("No se pudo copiar (permiso del navegador)", "warn");
       }
     });
-
-    // init docs
-    $("docBlock").textContent = buildDocText();
   </script>
 </body>
 
